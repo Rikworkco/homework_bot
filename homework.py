@@ -67,11 +67,11 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверка ответа от API  и возврат списка ДЗ."""
     if not isinstance(response, dict):
-        raise TypeError(f'Ответ должен быть словарем.')
+        raise TypeError('Ответ должен быть словарем.')
     if 'homeworks' not in response:
-        raise KeyError(f'Ответ должен содержать ключ homeworks.')
+        raise KeyError('Ответ должен содержать ключ homeworks.')
     if not isinstance(response['homeworks'], list):
-        raise WarningMessage(f'ДЗ не возвращается в виде списка.')
+        raise WarningMessage('ДЗ не возвращается в виде списка.')
     return response['homeworks']
 
 
