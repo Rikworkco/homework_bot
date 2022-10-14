@@ -29,15 +29,16 @@ HOMEWORK_STATUSES = {
 }
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(sys.stdout)
+handler = StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 formatter = logging.Formatter(
     '%(asctime)s [%(levelname)s] %(message)s'
 )
 handler.setFormatter(formatter)
 
+
 def send_message(bot, message):
-    '''Отправка сообщений в ТГ.'''
+    """Отправка сообщений в ТГ."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info(f'Бот отправил сообщение: {message}')
@@ -47,9 +48,8 @@ def send_message(bot, message):
         )
 
 
-
 def get_api_answer(current_timestamp):
-    '''Запрос к эндпоинту API-сервиса.'''
+    """Запрос к эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -65,7 +65,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    '''Проверка ответа от API  и возврат списка ДЗ.'''
+    """Проверка ответа от API  и возврат списка ДЗ."""
     if not isinstance(response, dict):
         raise TypeError(f'Ответ должен быть словарем.')
     if 'homeworks' not in response:
@@ -76,7 +76,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    '''Извлекает статус конкретного ДЗ.'''
+    """Извлекает статус конкретного ДЗ."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     logger.debug(f'На входе в parse_status: {homework}')
@@ -92,7 +92,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    '''Проверка доступности токенов из окружения.'''
+    """Проверка доступности токенов из окружения."""
     return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
