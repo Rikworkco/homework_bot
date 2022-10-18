@@ -5,7 +5,3 @@ class WarningMessage(Exception):
 class UnavailableApi(Exception):
     """Исключение при недоступном API Практикума."""
     pass
-
-class UnknownHomeworkStatus(KeyError):
-    """Исключение при неизвестном статусе ДЗ."""
-    pass

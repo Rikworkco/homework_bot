@@ -7,7 +7,7 @@ import telegram
 from dotenv import load_dotenv
 from logging import StreamHandler
 from http import HTTPStatus
-from exceptions import UnknownHomeworkStatus, WarningMessage, UnavailableApi
+from exceptions import WarningMessage, UnavailableApi
 
 
 load_dotenv()
@@ -112,7 +112,7 @@ def main():
     if not check_tokens():
         logger.critical('Ошибка в получении токенов. '
                         'Программа принудительно остановлена.')
-        sys.exit(message)
+        raise SystemExit
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     MESSAGE = ''
