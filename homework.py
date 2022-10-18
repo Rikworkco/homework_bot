@@ -113,6 +113,7 @@ def main():
         logger.critical('Ошибка в получении токенов. '
                         'Программа принудительно остановлена.')
         raise SystemExit
+        # sys.exit(message) выдает ошибку F821 undefined name 'message'
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     MESSAGE = ''
