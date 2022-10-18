@@ -7,7 +7,7 @@ import telegram
 from dotenv import load_dotenv
 from logging import StreamHandler
 from http import HTTPStatus
-from exceptions import WarningMessage
+from exceptions import UnknownHomeworkStatus, WarningMessage, UnavailableApi
 
 
 load_dotenv()
@@ -46,32 +46,42 @@ def send_message(bot, message):
         raise WarningMessage(
             f'Ошибка при отправке сообщения в ТГ: {error}'
         )
+    else:
+        logger.info(f'Сообщение отправлено: {message}')
 
 
 def get_api_answer(current_timestamp):
     """Запрос к эндпоинту API-сервиса."""
-    timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp}
+    request_params = {
+        'url': ENDPOINT,
+        'headers': {'Authorization': f'OAuth {PRACTICUM_TOKEN}'},
+        'params': {'from_date': current_timestamp or int(time.time())}
+    }
     try:
-        api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
-        if api_answer.status_code != HTTPStatus.OK:
-            message = (f'Эндпонит {ENDPOINT} недоступен.'
-                       f'Код ответа API-сервиса: {api_answer.status_code}')
-            raise Exception(message)
+        response = requests.get(**request_params)
+        logger.info('Получаем информацию API.')
+        if response.status_code != HTTPStatus.OK:
+            error_message = f'Запрос к ресурсу ' \
+                f'{ENDPOINT}' \
+                f'код ответа - {response.status_code}'
+            raise Exception(error_message)
     except requests.exceptions.RequestException as ex:
-        raise Exception(f'Ошибка при запросе к API: {ex}')
+        raise UnavailableApi(f'Ошибка при запросе к API: {ex}')
     else:
-        return api_answer.json()
+        return response.json()
 
 
 def check_response(response):
     """Проверка ответа от API  и возврат списка ДЗ."""
     if not isinstance(response, dict):
-        raise TypeError('Ответ должен быть словарем.')
+        raise TypeError('Ответ "response" должен быть словарем.')
     if 'homeworks' not in response:
-        raise KeyError('Ответ должен содержать ключ homeworks.')
+        raise KeyError('Ответ должен содержать ключ "homeworks".')
     if not isinstance(response['homeworks'], list):
-        raise WarningMessage('ДЗ не возвращается в виде списка.')
+        raise KeyError(
+            'В ответе от API под ключом "homeworks" пришел не список.'
+            f'response = {response}.'
+        )
     return response['homeworks']
 
 
@@ -79,15 +89,16 @@ def parse_status(homework):
     """Извлекает статус конкретного ДЗ."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
-    logger.debug(f'На входе в parse_status: {homework}')
-    homework_name = homework.get('homework_name')
-    logger.debug(f'Название домашки: {homework_name}')
-    homework_status = homework.get('status')
-    logger.debug(f'Статус домашки: {homework_status}')
+    verdict = HOMEWORK_STATUSES[homework_status]
+    if not verdict:
+        message_verdict = "Такого статуса нет в словаре"
+        raise KeyError(message_verdict)
     if homework_status not in HOMEWORK_STATUSES:
-        raise KeyError('Недокументированный статус домашней '
-                       'работы в ответе API.')
-    verdict = HOMEWORK_STATUSES.get(homework_status)
+        message_homework_status = "Такого статуса не существует"
+        raise KeyError(message_homework_status)
+    if "homework_name" not in homework:
+        message_homework_name = "Такого имени не существует"
+        raise KeyError(message_homework_name)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -98,10 +109,10 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    if check_tokens() is False:
-        logger.critical('Отсутствует обязательная переменная окружения. '
+    if not check_tokens():
+        logger.critical('Ошибка в получении токенов. '
                         'Программа принудительно остановлена.')
-        raise SystemExit
+        sys.exit(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     MESSAGE = ''
