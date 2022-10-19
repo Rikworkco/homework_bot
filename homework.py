@@ -67,7 +67,7 @@ def get_api_answer(current_timestamp):
                 f'Статус страницы не равен 200'
             raise WrongApiStatus(
                 f'Получен неверный статус API: {error_message}'
-                f'Параметры запроса: {response}'
+                f'Параметры запроса: {request_params}'
                 )
     except requests.exceptions.RequestException as ex:
         raise UnavailableApi(f'API-сервис Практикума недоступен. Ошибка: {ex}')
