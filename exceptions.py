@@ -8,3 +8,6 @@ class UnavailableApi(Exception):
 
 class SendMessageError(Exception):
     """Исключение при ошибке отправке сообщения."""
+
+class WrongApiStatus(Exception):
+    """Исключение при неверном API-статусе."""

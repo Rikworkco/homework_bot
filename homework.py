@@ -7,7 +7,7 @@ import telegram
 from dotenv import load_dotenv
 from logging import StreamHandler
 from http import HTTPStatus
-from exceptions import SendMessageError, WarningMessage, UnavailableApi
+from exceptions import SendMessageError, WarningMessage, UnavailableApi, WrongApiStatus
 
 
 load_dotenv()
@@ -65,7 +65,10 @@ def get_api_answer(current_timestamp):
                 f'{ENDPOINT}' \
                 f'Неверный код ответа от API: {response.status_code}' \
                 f'Статус страницы не равен 200'
-            raise Exception(error_message)
+            raise WrongApiStatus(
+                f'Получен неверный статус API: {error_message}'
+                f'Параметры запроса: {response}'
+                )
     except requests.exceptions.RequestException as ex:
         raise UnavailableApi(f'API-сервис Практикума недоступен. Ошибка: {ex}')
     else:
@@ -94,15 +97,18 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_STATUSES:
-        message_homework_status = "Такого статуса ДЗ не существует."
-        raise KeyError(message_homework_status)
+        raise KeyError('Получен неверный статус ДЗ. '
+                       'Отсутствует ожидаемый ключ "homework_status".'
+                       )
     if "homework_name" not in homework:
-        message_homework_name = "Такого имени не существует."
-        raise KeyError(message_homework_name)
+        raise KeyError('Получено неверное имя ДЗ. '
+                       'Отсутствует ожидаемый ключ "homework_name".'
+                       )
     verdict = HOMEWORK_STATUSES[homework_status]
     if not verdict:
-        message_verdict = "Такого статуса нет в словаре."
-        raise KeyError(message_verdict)
+        raise KeyError('Получен неверный статус API. '
+                       'Отсутствует ожидаемый ключ "status".'
+                       )
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
