@@ -7,7 +7,9 @@ import telegram
 from dotenv import load_dotenv
 from logging import StreamHandler
 from http import HTTPStatus
-from exceptions import SendMessageError, WarningMessage, UnavailableApi, WrongApiStatus
+from exceptions import (
+    SendMessageError, WarningMessage, UnavailableApi, WrongApiStatus
+)
 
 
 load_dotenv()
@@ -68,7 +70,7 @@ def get_api_answer(current_timestamp):
             raise WrongApiStatus(
                 f'Получен неверный статус API: {error_message}'
                 f'Параметры запроса: {request_params}'
-                )
+            )
     except requests.exceptions.RequestException as ex:
         raise UnavailableApi(f'API-сервис Практикума недоступен. Ошибка: {ex}')
     else:
