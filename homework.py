@@ -78,7 +78,7 @@ def check_response(response):
     if not isinstance(response, dict):
         raise TypeError('Ответ "response" должен быть словарем.'
                         f'response = {response}'
-        )
+                       )
     if 'homeworks' not in response:
         raise KeyError('Ответ должен содержать ключ "homeworks".')
     if not isinstance(response['homeworks'], list):
