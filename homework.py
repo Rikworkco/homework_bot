@@ -7,7 +7,7 @@ import telegram
 from dotenv import load_dotenv
 from logging import StreamHandler
 from http import HTTPStatus
-from exceptions import WarningMessage, UnavailableApi
+from exceptions import SendMessageError, WarningMessage, UnavailableApi
 
 
 load_dotenv()
@@ -39,9 +39,9 @@ handler.setFormatter(formatter)
 
 def send_message(bot, message):
     """Отправка сообщений в ТГ."""
+    logger.info('Начало отправки сообщений.')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.info(f'Бот отправил сообщение: {message}')
     except Exception as error:
         raise WarningMessage(
             f'Ошибка при отправке сообщения в ТГ: {error}'
@@ -63,18 +63,22 @@ def get_api_answer(current_timestamp):
         if response.status_code != HTTPStatus.OK:
             error_message = f'Запрос к ресурсу ' \
                 f'{ENDPOINT}' \
-                f'код ответа - {response.status_code}'
+                f'Неверный код ответа от API: {response.status_code}' \
+                f'Статус страницы не равен 200'
             raise Exception(error_message)
     except requests.exceptions.RequestException as ex:
-        raise UnavailableApi(f'Ошибка при запросе к API: {ex}')
+        raise UnavailableApi(f'API-сервис Практикума недоступен. Ошибка: {ex}')
     else:
         return response.json()
 
 
 def check_response(response):
     """Проверка ответа от API  и возврат списка ДЗ."""
+    logger.info('Проверка корректности полученных данных.')
     if not isinstance(response, dict):
-        raise TypeError('Ответ "response" должен быть словарем.')
+        raise TypeError('Ответ "response" должен быть словарем.'
+                        f'response = {response}'
+        )
     if 'homeworks' not in response:
         raise KeyError('Ответ должен содержать ключ "homeworks".')
     if not isinstance(response['homeworks'], list):
@@ -89,21 +93,22 @@ def parse_status(homework):
     """Извлекает статус конкретного ДЗ."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
-    verdict = HOMEWORK_STATUSES[homework_status]
-    if not verdict:
-        message_verdict = "Такого статуса нет в словаре"
-        raise KeyError(message_verdict)
     if homework_status not in HOMEWORK_STATUSES:
-        message_homework_status = "Такого статуса не существует"
+        message_homework_status = "Такого статуса ДЗ не существует."
         raise KeyError(message_homework_status)
     if "homework_name" not in homework:
-        message_homework_name = "Такого имени не существует"
+        message_homework_name = "Такого имени не существует."
         raise KeyError(message_homework_name)
+    verdict = HOMEWORK_STATUSES[homework_status]
+    if not verdict:
+        message_verdict = "Такого статуса нет в словаре."
+        raise KeyError(message_verdict)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
     """Проверка доступности токенов из окружения."""
+    logger.info('Проверка доступности токенов.')
     return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
@@ -112,8 +117,9 @@ def main():
     if not check_tokens():
         logger.critical('Ошибка в получении токенов. '
                         'Программа принудительно остановлена.')
-        raise SystemExit
-        # sys.exit(message) выдает ошибку F821 undefined name 'message'
+        message = 'Проверьте корректность токенов.'
+        logger.critical(message)
+        sys.exit(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     MESSAGE = ''
@@ -136,7 +142,7 @@ def main():
                 MESSAGE = message
             else:
                 logger.debug('Ответ не изменился. Подождем ещё.')
-        except WarningMessage as warning:
+        except SendMessageError as warning:
             message = f'Внимание: {warning}'
             logger.error(message)
         except Exception as error:

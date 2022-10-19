@@ -5,3 +5,6 @@ class WarningMessage(Exception):
 class UnavailableApi(Exception):
     """Исключение при недоступном API Практикума."""
     pass
+
+class SendMessageError(Exception):
+    """Исключение при ошибке отправке сообщения."""
